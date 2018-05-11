@@ -43,4 +43,12 @@ public class gorillaTest {
         species = gorilla.speciesFromFile("test_files/Toy_FASTAs-in.txt");
         Assert.assertEquals("Toys failed", 3, species.size());
     }
+
+    @Test
+    public void arrayReadFromFileShouldWorkPlease() throws Exception {
+        int[][] test = gorilla.readMatrixFromFile("test_files/BLOSUM62.txt", 24);
+        Assert.assertEquals("test[0][0] failed" , 4, test[0][0]);
+        Assert.assertEquals("test[6][9] failed" , -3, test[6][9]);
+        Assert.assertEquals("test[23][23] failed" , 1, test[23][23]);
+    }
 }

@@ -5,36 +5,60 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class gorilla {
+
+    public static int calls = 0;
+
     public static void main(String[] args) {
-        speciesFromFile("test_files/HbB_FASTAs-in.txt").forEach(System.out::println);
+        List<Specie> species = speciesFromFile("test_files/HbB_FASTAs-in.txt");
+        Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
+        int[][] costs = new int[0][];
+        try {
+            costs = gorilla.readMatrixFromFile("test_files/BLOSUM62.txt", 24);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        try {
+            System.out.println(similarity("KQRK", "KAK", costs, symbolMapping));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
     }
 
-    /**
-     * Returns a list of parsed species from a said file. Will return an empty list if nothing in the file was parsed.
-     * @param fileName
-     * @return
-     */
-    static List<Specie> speciesFromFile(String fileName) {
-        try(Scanner sc = new Scanner(new FileReader(fileName))) {
-            StringJoiner bob = new StringJoiner("\n");
-            while(sc.hasNextLine()) {
-                bob.add(sc.nextLine());
-            }
-            String contents = bob.toString();
+    static Result similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping) {
+        System.err.println("first l; "+first.protein.length());
+        System.err.println("second l; "+second.protein.length());
+        return similarity(  new StringBuffer(first.protein).reverse().toString(),
+                            new StringBuffer(second.protein).reverse().toString(),
+                            costs, symbolMapping);
+    }
 
-            // idéen är att läsa in hela filen, splitta på ">" för att få alla specie-strängar(och den första är tom).
-            String[] specieStrings = contents.split(">");
-
-            return Arrays.stream(specieStrings)
-                                .map(gorilla::specieParser)
-                                .flatMap( o -> o.isPresent() ? Stream.of(o.get()) : Stream.empty()) // oklart varför det ska va såhär jobbigt med flatMap.
-                                .filter(specie -> !specie.name.isEmpty() && !specie.protein.isEmpty())
-                                .collect(Collectors.toList());
-        } catch (FileNotFoundException e) {
-            System.err.println("Could not find file, exiting...");
-            System.exit(1);
+    static Result similarity(String first, String second, int[][] costs, Map<Character, Integer> symbolMapping) {
+        if(first.isEmpty()) { // om ena strängen är tom måste vi hoppa över resten av tecknena i andra strängen.
+            return new Result("", second, second.length() * -4); // avbrottsvilkor
+        } else if(second.isEmpty()) {
+            return new Result(first, "", first.length() * -4); // avbrottsvilkor
         }
-        return null;
+
+        char lastOfFirstString = first.charAt(0);
+        char lastOfSecondString = second.charAt(0);
+
+        int indexFirst = symbolMapping.containsKey(lastOfFirstString) ? symbolMapping.get(lastOfFirstString) : 23;
+        int indexSecond = symbolMapping.containsKey(lastOfSecondString) ? symbolMapping.get(lastOfSecondString) : 23;
+
+        Result wrong = (similarity(first.substring(1), second.substring(1), costs, symbolMapping));
+        wrong.score+=costs[indexFirst][indexSecond];
+
+        Result missing1 = similarity(first, second.substring(1), costs, symbolMapping); // -4 kommer fr. std i matrisens kanter.
+        missing1.score-=4;
+
+        Result missing2 = similarity(first.substring(1), second, costs, symbolMapping);
+        missing2.score-=4;
+
+        Result[] sorted = {wrong, missing1, missing2};
+        Arrays.sort(sorted, (a,b) -> Integer.compare(b.score, a.score));
+
+        return sorted[0];
     }
 
     static Optional<Specie> specieParser(String specieString) {
@@ -97,4 +121,110 @@ public class gorilla {
         }
     }
 
+    static class Result {
+        String first;
+        String second;
+        int score;
+
+        public Result(String first, String second, int score) {
+            this.first = first;
+            this.second = second;
+            this.score = score;
+        }
+
+        @Override
+        public String toString() {
+            return "Result{" +
+                    "first='" + first + '\'' +
+                    ", second='" + second + '\'' +
+                    ", score=" + score +
+                    '}';
+        }
+    }
+    /**
+     * Returns a list of parsed species from a said file. Will return an empty list if nothing in the file was parsed.
+     * @param fileName
+     * @return
+     */
+    static List<Specie> speciesFromFile(String fileName) {
+        try(Scanner sc = new Scanner(new FileReader(fileName))) {
+            StringJoiner bob = new StringJoiner("\n");
+            while(sc.hasNextLine()) {
+                bob.add(sc.nextLine());
+            }
+            String contents = bob.toString();
+
+            // idéen är att läsa in hela filen, splitta på strängen på ">" för att få alla specie-strängar(och den första är tom).
+            String[] specieStrings = contents.split(">");
+
+            return Arrays.stream(specieStrings)
+                                .filter(s -> !s.isEmpty()) // ta bort tomma element.
+                                .map(gorilla::specieParser)
+                                .flatMap( o -> o.isPresent() ? Stream.of(o.get()) : Stream.empty()) // oklart varför det ska va såhär jobbigt med flatMap.
+                                .collect(Collectors.toList());
+        } catch (FileNotFoundException e) {
+            System.err.println("Could not find file, exiting...");
+            System.exit(1);
+        }
+        return null;
+    }
+
+    static int[][] readMatrixFromFile(String fileName, int side) throws FileNotFoundException {
+        int[][] result = new int[side][side];
+        try(Scanner sc = new Scanner(new FileReader(fileName))) {
+            int row = 0;
+            while (sc.hasNextLine()) {
+                String currentLine = sc.nextLine();
+                // strunta i raden om den 1) börjar med # eller 2) inte innehåller något nummer(regex). Fungerar för filen iallafall.
+                if(currentLine.startsWith("#") || !currentLine.matches(".*\\d+.*")) {
+                    continue;
+                }
+                String[] split = currentLine.split("\\s+");
+
+                for(int i = 0; i<side; i++) {
+                    result[row][i] = Integer.parseInt(split[i+1]);
+                }
+                row++;
+            }
+        }
+        return result;
+    }
+
+    // bara debug!
+    static void printArray(int[][] array) {
+        for(int[] row : array) {
+            for (int element : row) {
+                System.out.print("\t" + element);
+            }
+            System.out.println();
+        }
+    }
+
+    private static Map<Character, Integer> someNastyCodePleaseDontLookAtThis() {
+        Map<Character, Integer> result = new HashMap<>();
+        result.put('A', 0);
+        result.put('R', 1);
+        result.put('N', 2);
+        result.put('D', 3);
+        result.put('C', 4);
+        result.put('Q', 5);
+        result.put('E', 6);
+        result.put('G', 7);
+        result.put('H', 8);
+        result.put('I', 9);
+        result.put('L', 10);
+        result.put('K', 11);
+        result.put('M', 12);
+        result.put('F', 13);
+        result.put('P', 14);
+        result.put('S', 15);
+        result.put('T', 16);
+        result.put('W', 17);
+        result.put('Y', 18);
+        result.put('V', 19);
+        result.put('B', 20);
+        result.put('Z', 21);
+        result.put('X', 22);
+        return result;
+    }
 }
