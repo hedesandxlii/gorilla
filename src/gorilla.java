@@ -6,59 +6,54 @@ import java.util.stream.Stream;
 
 public class gorilla {
 
-    public static int calls = 0;
-
     public static void main(String[] args) {
+        //System.err.println("args = " + args[0] +" "+ args[1]);
+        //List<Specie> species = speciesFromFile(args[0]);
         List<Specie> species = speciesFromFile("test_files/HbB_FASTAs-in.txt");
         Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
-        int[][] costs = new int[0][];
+        int[][] costs = null;
+        Map<StringTuple, Integer> memoization = new HashMap<>();
+
         try {
+            //costs = gorilla.readMatrixFromFile(args[1], 24); TOBE
             costs = gorilla.readMatrixFromFile("test_files/BLOSUM62.txt", 24);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        try {
-            System.out.println(similarity("KQRK", "KAK", costs, symbolMapping));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (FileNotFoundException e) { e.printStackTrace(); }
+
+        Specie first = species.get(0);
+        Specie second = species.get(3);
+
+        System.out.println(first.name+"--"+second.name);
+        System.out.println( similarity(first, second, costs, symbolMapping, memoization) );
 
     }
 
-    static Result similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping) {
-        System.err.println("first l; "+first.protein.length());
-        System.err.println("second l; "+second.protein.length());
-        return similarity(  new StringBuffer(first.protein).reverse().toString(),
-                            new StringBuffer(second.protein).reverse().toString(),
-                            costs, symbolMapping);
+    static int similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
+        StringTuple reversedAndTupled = new StringTuple(new StringBuffer(first.protein).reverse().toString(), new StringBuffer(second.protein).reverse().toString());
+        return similarity(reversedAndTupled, costs, symbolMapping, memoization);
     }
 
-    static Result similarity(String first, String second, int[][] costs, Map<Character, Integer> symbolMapping) {
-        if(first.isEmpty()) { // om ena strängen är tom måste vi hoppa över resten av tecknena i andra strängen.
-            return new Result("", second, second.length() * -4); // avbrottsvilkor
-        } else if(second.isEmpty()) {
-            return new Result(first, "", first.length() * -4); // avbrottsvilkor
+    static int similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
+
+        if(memoization.containsKey(tuple)) {
+            return memoization.get(tuple);
         }
 
-        char lastOfFirstString = first.charAt(0);
-        char lastOfSecondString = second.charAt(0);
+        if(tuple.anyEmpty()) {
+            memoization.put(tuple, tuple.deltaLength() * -4);
+            return tuple.deltaLength() * -4;
+        }
 
-        int indexFirst = symbolMapping.containsKey(lastOfFirstString) ? symbolMapping.get(lastOfFirstString) : 23;
-        int indexSecond = symbolMapping.containsKey(lastOfSecondString) ? symbolMapping.get(lastOfSecondString) : 23;
+        int indexFirst = symbolMapping.containsKey(tuple.first.charAt(0)) ? symbolMapping.get(tuple.first.charAt(0)) : 23;
+        int indexSecond = symbolMapping.containsKey(tuple.second.charAt(0)) ? symbolMapping.get(tuple.second.charAt(0)) : 23;
 
-        Result wrong = (similarity(first.substring(1), second.substring(1), costs, symbolMapping));
-        wrong.score+=costs[indexFirst][indexSecond];
+        int wrong = similarity(tuple.dropFirst(1).dropSecond(1), costs, symbolMapping, memoization) + costs[indexFirst][indexSecond];
+        int missing1 = similarity(tuple.dropSecond(1), costs, symbolMapping, memoization) - 4; // -4 kommer fr. std i matrisens kanter.
+        int missing2 = similarity(tuple.dropFirst(1), costs, symbolMapping, memoization) - 4;
 
-        Result missing1 = similarity(first, second.substring(1), costs, symbolMapping); // -4 kommer fr. std i matrisens kanter.
-        missing1.score-=4;
+        int result = Math.max(wrong, Math.max(missing1, missing2));
+        memoization.put(tuple, result);
 
-        Result missing2 = similarity(first.substring(1), second, costs, symbolMapping);
-        missing2.score-=4;
-
-        Result[] sorted = {wrong, missing1, missing2};
-        Arrays.sort(sorted, (a,b) -> Integer.compare(b.score, a.score));
-
-        return sorted[0];
+        return result;
     }
 
     static Optional<Specie> specieParser(String specieString) {
@@ -83,6 +78,12 @@ public class gorilla {
 
         return Optional.of(new Specie(name, protein));
     }
+
+    //
+    //
+    //    KLASSER
+    //
+    //
 
     static class Specie {
         String name;
@@ -121,26 +122,61 @@ public class gorilla {
         }
     }
 
-    static class Result {
+    static class StringTuple {
         String first;
         String second;
-        int score;
 
-        public Result(String first, String second, int score) {
+        public StringTuple(String first, String second) {
             this.first = first;
             this.second = second;
-            this.score = score;
+        }
+
+        public boolean anyEmpty() {
+            return first.isEmpty() || second.isEmpty();
+        }
+
+        public int deltaLength() {
+            return Math.abs(first.length()-second.length());
+        }
+
+        public StringTuple dropFirst(int count) {
+            return new StringTuple(first.substring(count), second);
+        }
+
+        public StringTuple dropSecond(int count) {
+            return new StringTuple(first, second.substring(count));
         }
 
         @Override
         public String toString() {
-            return "Result{" +
-                    "first='" + first + '\'' +
-                    ", second='" + second + '\'' +
-                    ", score=" + score +
-                    '}';
+            return "(" + first + ", " + second + ')';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            StringTuple that = (StringTuple) o;
+
+            return this.first.equals(that.first) || this.first.equals(that.second) &&
+                   this.second.equals(that.first) || this.second.equals(that.second);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = first != null ? first.hashCode() : 0;
+            result += (second != null ? second.hashCode() : 0);
+            return result;
         }
     }
+
+
+    //
+    //
+    //    FIL-RELATERAT OCH ANNAT
+    //
+    //
     /**
      * Returns a list of parsed species from a said file. Will return an empty list if nothing in the file was parsed.
      * @param fileName

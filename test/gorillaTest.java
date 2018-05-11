@@ -51,4 +51,10 @@ public class gorillaTest {
         Assert.assertEquals("test[6][9] failed" , -3, test[6][9]);
         Assert.assertEquals("test[23][23] failed" , 1, test[23][23]);
     }
+
+    @Test
+    public void stringTuplesShouldBeUndirected() throws Exception {
+        Assert.assertEquals("Equals does not function",new gorilla.StringTuple("a","b"), new gorilla.StringTuple("b","a"));
+        Assert.assertEquals("Hash does not function",new gorilla.StringTuple("a","b").hashCode(), new gorilla.StringTuple("b","a").hashCode());
+    }
 }
