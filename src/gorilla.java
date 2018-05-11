@@ -2,6 +2,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class gorilla {
     public static void main(String[] args) {
@@ -20,12 +21,13 @@ public class gorilla {
                 bob.add(sc.nextLine());
             }
             String contents = bob.toString();
+
+            // idéen är att läsa in hela filen, splitta på ">" för att få alla specie-strängar(och den första är tom).
             String[] specieStrings = contents.split(">");
 
             return Arrays.stream(specieStrings)
                                 .map(gorilla::specieParser)
-                                .filter(Optional::isPresent)
-                                .map(Optional::get)
+                                .flatMap( o -> o.isPresent() ? Stream.of(o.get()) : Stream.empty()) // oklart varför det ska va såhär jobbigt med flatMap.
                                 .filter(specie -> !specie.name.isEmpty() && !specie.protein.isEmpty())
                                 .collect(Collectors.toList());
         } catch (FileNotFoundException e) {
