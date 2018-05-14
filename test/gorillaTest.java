@@ -77,9 +77,16 @@ public class gorillaTest {
         gorilla.Result r1 = new gorilla.Result(new gorilla.StringTuple("Heej", "Ar"), 20);
         gorilla.Result r2 = new gorilla.Result(new gorilla.StringTuple("san", "ne"), 22);
         gorilla.Result test = new gorilla.Result(new gorilla.StringTuple("Heejsan", "Arne"), 42);
-        assertEquals(test, r1.addWith(r2));
-        assertNotSame(test, r1);
-        assertNotSame(test, r2);
+        assertEquals(test.words, r1.addWith(r2).words);
     }
 
+    @Test
+    public void wholeToyFileShouldBeCorrect() throws Exception {
+        gorilla g = new gorilla();
+        List<gorilla.Result> results = g.solve("test_files/Toy_FASTAs-in.txt", "test_files/BLOSUM62.txt");
+
+        assertEquals("Sphinx, Snark does not match. FILE DEPENDANT", -8, results.get(1).score);
+        assertEquals("Sphinx, bandersnatch does not match. FILE DEPENDANT", 5, results.get(2).score);
+        assertEquals("snark, bandersnatch does not match. FILE DEPENDANT", -18, results.get(0).score);
+    }
 }

@@ -5,27 +5,35 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class gorilla {
-    public static int recursiveCalls = 0;
 
     public static void main(String[] args) {
-        //System.err.println("args = " + args[0] +" "+ args[1]);
-        //List<Specie> species = speciesFromFile(args[0]);
-        List<Specie> species = speciesFromFile("test_files/HbB_FASTAs-in.txt");
-        Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
-        int[][] costs = null;
-        Map<StringTuple, Integer> memoization = new HashMap<>(10000);
+        gorilla g = new gorilla();
+        g.solve(args[0], args[1]).forEach(System.err::println);
+    }
+
+    public List<Result> solve(String specieFile, String costMatrixFile) {
+        final List<Specie> species = speciesFromFile(specieFile);
+        //final List<Specie> species = speciesFromFile("test_files/HbB_FASTAs-in.txt");
+        final Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
+        final int[][] costs;
+        Map<StringTuple, Integer> memoization = new HashMap<>();
+        Set<Result> results = new HashSet<>();
 
         try {
-            //costs = gorilla.readMatrixFromFile(args[1], 24); TOBE
-            costs = gorilla.readMatrixFromFile("test_files/BLOSUM62.txt", 24);
-        } catch (FileNotFoundException e) { e.printStackTrace(); }
+            costs = gorilla.readMatrixFromFile(costMatrixFile, 24);
 
-        Specie first = species.get(0);
-        Specie second = species.get(3);
-
-        System.out.println(first.name+"--"+second.name);
-        System.out.println( similarity(first, second, costs, symbolMapping, memoization) );
-
+            System.out.println(similarity(species.get(0), species.get(3), costs, symbolMapping, memoization));
+//            for(Specie s1 : species) {
+//                for(Specie s2 : species) {
+//                    if(s1!=s2 && !results.contains(new Result(new StringTuple(s1.protein, s2.protein), 0))) {
+//                        results.add(similarity(s1, s2, costs, symbolMapping, memoization));
+//                    }
+//                }
+//            }
+        } catch (FileNotFoundException e) { e.printStackTrace(); System.exit(1); }
+        List<Result> r = new ArrayList<>();
+        r.addAll(results);
+        return r;
     }
 
     static Result similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
@@ -41,35 +49,34 @@ public class gorilla {
     static Result similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
         // if we've already calculated the tuple, just fetch it from the map.
         if(memoization.containsKey(tuple)) {
-            System.err.println("DYNAMIC PROGRAMMING");
             return new Result(tuple, memoization.get(tuple));
         }
 
-        // termination checks.
+        // termination checks first
+        Result result;
         if(tuple.bothEmpty()) {
-            return new Result(tuple, 0);
+            result = new Result(tuple, 0);
         } else if(tuple.anyEmpty()) {
-            return new Result(tuple.padLesserOne(tuple.deltaLength()), tuple.deltaLength() * -4);
+            result = new Result(tuple.padLesserOne(tuple.deltaLength()), tuple.deltaLength() * -4);
+        } else {
+            // getting the cost for this call.
+            int index1 = symbolMapping.getOrDefault(tuple.first.charAt(0), 23); // 23 handles dashes.
+            int index2 = symbolMapping.getOrDefault(tuple.second.charAt(0), 23);
+
+            int cost = costs[index1][index2];
+            final Result thisCall = new Result(tuple.firstChars(), cost);
+
+            // recursion.
+            Result wrong = thisCall.addWith(similarity(tuple.dropBoth(1), costs, symbolMapping, memoization));
+            Result firstMissing = thisCall.addWith(similarity(tuple.dropBoth(1).dashFirst(), costs, symbolMapping, memoization));
+            Result secondMissing = thisCall.addWith(similarity(tuple.dropBoth(1).dashSecond(), costs, symbolMapping, memoization));
+
+            // done
+            result = Arrays.stream(new Result[]{wrong, firstMissing, secondMissing})
+                    .max(Comparator.comparingInt(r -> r.score))
+                    .get();
         }
-
-        // getting the cost for this call.
-        int index1 = symbolMapping.getOrDefault(tuple.first.charAt(0), 23); // 23 handles dashes.
-        int index2 = symbolMapping.getOrDefault(tuple.second.charAt(0), 23);
-
-        int cost = costs[index1][index2];
-        final Result thisCall = new Result(tuple.firstChars(), cost);
-
-        // recursion.
-        Result wrong = thisCall.addWith( similarity(tuple.dropBoth(1), costs, symbolMapping, memoization ));
-        Result firstMissing = thisCall.addWith( similarity(tuple.dropBoth(1).dashFirst(), costs, symbolMapping, memoization));
-        Result secondMissing = thisCall.addWith( similarity(tuple.dropBoth(1).dashSecond(), costs, symbolMapping, memoization));
-
-        // done
-        Result result = Arrays.stream(new Result[]{wrong, firstMissing, secondMissing})
-                            .filter(Objects::nonNull)
-                            .max(Comparator.comparingInt(r -> r.score))
-                            .get();
-        memoization.put(result.words, result.score);
+        memoization.putIfAbsent(result.words, result.score);
         return result;
     }
 
@@ -154,13 +161,9 @@ public class gorilla {
                                 this.score+other.score);
         }
 
-        public void adjustScore(int amount) {
-            score += amount;
-        }
-
         @Override
         public String toString() {
-            return words.first + '\n' + words.second + '\n' + score;
+            return score +""+ '\n' + words.first +'\n'+ words.second +'\n';
         }
 
         @Override
@@ -170,16 +173,15 @@ public class gorilla {
 
             Result result = (Result) o;
 
-            if (score != result.score) return false;
-            return words != null ? words.equals(result.words) : result.words == null;
+            //SKITER I SCORE
+            return words.equals(result.words);
 
         }
 
         @Override
         public int hashCode() {
-            int result = words != null ? words.hashCode() : 0;
-            result = 31 * result + score;
-            return result;
+            // SKITER I SCORE
+            return words != null ? words.hashCode() : 0;
         }
     }
 
