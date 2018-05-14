@@ -9,12 +9,16 @@ public class gorilla {
     public static int calls = 0;
     public static void main(String[] args) {
         gorilla g = new gorilla();
+        if(args.length!=2) {
+            System.err.println("Necessary files not specified, exiting...");
+            System.exit(1);
+        }
         g.solve(args[0], args[1]).forEach(System.err::println);
     }
 
     public List<Result> solve(String specieFile, String costMatrixFile) {
         final List<Specie> species = speciesFromFile(specieFile);
-        //final List<Specie> species = speciesFromFile("test_files/HbB_FASTAs-in.txt");
+        //final List<Specie> species = speciesFromFile("test_files/hbb.txt");
         final Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
         final int[][] costs;
         Map<StringTuple, Integer> memoization = new HashMap<>();
@@ -50,6 +54,7 @@ public class gorilla {
     static Result similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
         calls++;
         long start = System.currentTimeMillis();
+
         // if we've already calculated the tuple, just fetch it from the map.
         if(memoization.containsKey(tuple)) {
             calls--;
@@ -88,7 +93,7 @@ public class gorilla {
 
             if(calls==1) System.err.println("result "+ (System.currentTimeMillis()-start));
         }
-        memoization.putIfAbsent(result.words, result.score);
+        memoization.put(result.words, result.score);
         calls--;
         return result;
     }

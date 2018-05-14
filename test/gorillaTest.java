@@ -1,7 +1,5 @@
-import org.junit.Assert;
 import org.junit.Test;
 
-import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,15 +38,15 @@ public class gorillaTest {
 
     @Test
     public void correctNumberOfSpeciesFromFile() throws Exception {
-        List<gorilla.Specie> species = gorilla.speciesFromFile("test_files/HbB_FASTAs-in.txt");
+        List<gorilla.Specie> species = gorilla.speciesFromFile("test_files/hbb.txt");
         assertEquals("HbB failed", 13, species.size());
-        species = gorilla.speciesFromFile("test_files/Toy_FASTAs-in.txt");
+        species = gorilla.speciesFromFile("test_files/toy.txt");
         assertEquals("Toys failed", 3, species.size());
     }
 
     @Test
     public void arrayReadFromFileShouldWorkPlease() throws Exception {
-        int[][] test = gorilla.readMatrixFromFile("test_files/BLOSUM62.txt", 24);
+        int[][] test = gorilla.readMatrixFromFile("test_files/costs.txt", 24);
         assertEquals("test[0][0] failed" , 4, test[0][0]);
         assertEquals("test[6][9] failed" , -3, test[6][9]);
         assertEquals("test[23][23] failed" , 1, test[23][23]);
@@ -83,7 +81,7 @@ public class gorillaTest {
     @Test
     public void wholeToyFileShouldBeCorrect() throws Exception {
         gorilla g = new gorilla();
-        List<gorilla.Result> results = g.solve("test_files/Toy_FASTAs-in.txt", "test_files/BLOSUM62.txt");
+        List<gorilla.Result> results = g.solve("test_files/toy.txt", "test_files/costs.txt");
 
         assertEquals("Sphinx, Snark does not match. FILE DEPENDANT", -8, results.get(1).score);
         assertEquals("Sphinx, bandersnatch does not match. FILE DEPENDANT", 5, results.get(2).score);
