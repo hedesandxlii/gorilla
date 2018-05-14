@@ -5,14 +5,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class gorilla {
+    public static int recursiveCalls = 0;
 
     public static void main(String[] args) {
         //System.err.println("args = " + args[0] +" "+ args[1]);
         //List<Specie> species = speciesFromFile(args[0]);
-        List<Specie> species = speciesFromFile("test_files/Toy_FASTAs-in.txt");
+        List<Specie> species = speciesFromFile("test_files/HbB_FASTAs-in.txt");
         Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
         int[][] costs = null;
-        Map<StringTuple, Integer> memoization = new HashMap<>();
+        Map<StringTuple, Integer> memoization = new HashMap<>(10000);
 
         try {
             //costs = gorilla.readMatrixFromFile(args[1], 24); TOBE
@@ -20,7 +21,7 @@ public class gorilla {
         } catch (FileNotFoundException e) { e.printStackTrace(); }
 
         Specie first = species.get(0);
-        Specie second = species.get(2);
+        Specie second = species.get(3);
 
         System.out.println(first.name+"--"+second.name);
         System.out.println( similarity(first, second, costs, symbolMapping, memoization) );
@@ -29,42 +30,47 @@ public class gorilla {
 
     static Result similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
         StringTuple reversedAndTupled = new StringTuple(new StringBuffer(first.protein).reverse().toString(), new StringBuffer(second.protein).reverse().toString());
+
         Result result = similarity(reversedAndTupled, costs, symbolMapping, memoization);
 
-//        result.words.first = new StringBuffer(result.words.first).reverse().toString();
-//        result.words.second = new StringBuffer(result.words.second).reverse().toString();
+        result.words.first = new StringBuffer(result.words.first).reverse().toString();
+        result.words.second = new StringBuffer(result.words.second).reverse().toString();
         return result;
     }
 
-    static Result similarity(StringTuple _tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
-        StringTuple tuple = _tuple;
-
-        int cost = 0;
-
-        if(tuple.anyBeginsWith("-")) {
-            cost-=4;
-        }
-        if(tuple.anyEmpty()) {
-            return similarity(tuple.padLesserOne(1), costs, symbolMapping, memoization);
+    static Result similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
+        // if we've already calculated the tuple, just fetch it from the map.
+        if(memoization.containsKey(tuple)) {
+            System.err.println("DYNAMIC PROGRAMMING");
+            return new Result(tuple, memoization.get(tuple));
         }
 
+        // termination checks.
+        if(tuple.bothEmpty()) {
+            return new Result(tuple, 0);
+        } else if(tuple.anyEmpty()) {
+            return new Result(tuple.padLesserOne(tuple.deltaLength()), tuple.deltaLength() * -4);
+        }
 
-        int index1 = symbolMapping.containsKey(tuple.first.charAt(0)) ? symbolMapping.get(tuple.first.charAt(0)) : 23;
-        int index2 = symbolMapping.containsKey(tuple.second.charAt(0)) ? symbolMapping.get(tuple.second.charAt(0)) : 23;
-        cost += costs[index1][index2];
+        // getting the cost for this call.
+        int index1 = symbolMapping.getOrDefault(tuple.first.charAt(0), 23); // 23 handles dashes.
+        int index2 = symbolMapping.getOrDefault(tuple.second.charAt(0), 23);
+
+        int cost = costs[index1][index2];
         final Result thisCall = new Result(tuple.firstChars(), cost);
 
+        // recursion.
         Result wrong = thisCall.addWith( similarity(tuple.dropBoth(1), costs, symbolMapping, memoization ));
         Result firstMissing = thisCall.addWith( similarity(tuple.dropBoth(1).dashFirst(), costs, symbolMapping, memoization));
         Result secondMissing = thisCall.addWith( similarity(tuple.dropBoth(1).dashSecond(), costs, symbolMapping, memoization));
 
+        // done
         Result result = Arrays.stream(new Result[]{wrong, firstMissing, secondMissing})
-                            .max((r1,r2) -> Integer.compare(r1.score,r2.score))
+                            .filter(Objects::nonNull)
+                            .max(Comparator.comparingInt(r -> r.score))
                             .get();
+        memoization.put(result.words, result.score);
         return result;
-
-
-
     }
 
     static Optional<Specie> specieParser(String specieString) {
@@ -197,6 +203,10 @@ public class gorilla {
             return first.isEmpty() || second.isEmpty();
         }
 
+        public boolean bothEmpty() {
+            return first.isEmpty() && second.isEmpty();
+        }
+
         public boolean anyBeginsWith(String prefix) {
             return first.startsWith(prefix) || second.startsWith(prefix);
         }
@@ -247,8 +257,8 @@ public class gorilla {
 
             StringTuple that = (StringTuple) o;
 
-            return this.first.equals(that.first) || this.first.equals(that.second) &&
-                   this.second.equals(that.first) || this.second.equals(that.second);
+            return ( this.first.equals(that.first) && this.second.equals(that.second) ) ||
+                    ( this.first.equals(that.second) && this.second.equals(that.first) );
         }
 
         @Override
@@ -262,7 +272,7 @@ public class gorilla {
 
     //
     //
-    //    FIL-RELATERAT OCH ANNAT
+    //    FIL-RELATERAT OCH MISC
     //
     //
     /**
