@@ -57,4 +57,27 @@ public class gorillaTest {
         Assert.assertEquals("Equals does not function",new gorilla.StringTuple("a","b"), new gorilla.StringTuple("b","a"));
         Assert.assertEquals("Hash does not function",new gorilla.StringTuple("a","b").hashCode(), new gorilla.StringTuple("b","a").hashCode());
     }
+
+    @Test
+    public void someTestsOfStringTuple() throws Exception {
+        gorilla.StringTuple st = new gorilla.StringTuple("Arnold", "hej");
+        Assert.assertFalse("Tuple claimed to one element empty when not", st.anyEmpty());
+        Assert.assertTrue("Begins with error with dash with",st.dashFirst().dashSecond().anyBeginsWith("-"));
+        Assert.assertFalse("Begins with gives false positves", st.anyBeginsWith("-"));
+        Assert.assertEquals("Delta length is not right", 3, st.deltaLength());
+        Assert.assertEquals("Drop is not working as intended", new gorilla.StringTuple("old", "hej"), st.dropFirst(3));
+        Assert.assertEquals("The first and second has switched palce", new gorilla.StringTuple("nold", "ej"), st.dropFirst(2).dropSecond(1));
+        Assert.assertEquals("Pad is fucked", "hej-", st.padLesserOne(1).second);
+    }
+
+    @Test
+    public void resultsShouldAddUpNicely() throws Exception {
+        gorilla.Result r1 = new gorilla.Result(new gorilla.StringTuple("Heej", "Ar"), 20);
+        gorilla.Result r2 = new gorilla.Result(new gorilla.StringTuple("san", "ne"), 22);
+        gorilla.Result test = new gorilla.Result(new gorilla.StringTuple("Heejsan", "Arne"), 42);
+        Assert.assertEquals(test, r1.addWith(r2));
+        Assert.assertNotSame(test, r1);
+        Assert.assertNotSame(test, r2);
+    }
+
 }

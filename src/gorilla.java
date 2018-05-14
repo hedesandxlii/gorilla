@@ -9,7 +9,7 @@ public class gorilla {
     public static void main(String[] args) {
         //System.err.println("args = " + args[0] +" "+ args[1]);
         //List<Specie> species = speciesFromFile(args[0]);
-        List<Specie> species = speciesFromFile("test_files/HbB_FASTAs-in.txt");
+        List<Specie> species = speciesFromFile("test_files/Toy_FASTAs-in.txt");
         Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
         int[][] costs = null;
         Map<StringTuple, Integer> memoization = new HashMap<>();
@@ -20,40 +20,51 @@ public class gorilla {
         } catch (FileNotFoundException e) { e.printStackTrace(); }
 
         Specie first = species.get(0);
-        Specie second = species.get(3);
+        Specie second = species.get(2);
 
         System.out.println(first.name+"--"+second.name);
         System.out.println( similarity(first, second, costs, symbolMapping, memoization) );
 
     }
 
-    static int similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
+    static Result similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
         StringTuple reversedAndTupled = new StringTuple(new StringBuffer(first.protein).reverse().toString(), new StringBuffer(second.protein).reverse().toString());
-        return similarity(reversedAndTupled, costs, symbolMapping, memoization);
+        Result result = similarity(reversedAndTupled, costs, symbolMapping, memoization);
+
+//        result.words.first = new StringBuffer(result.words.first).reverse().toString();
+//        result.words.second = new StringBuffer(result.words.second).reverse().toString();
+        return result;
     }
 
-    static int similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
+    static Result similarity(StringTuple _tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
+        StringTuple tuple = _tuple;
 
-        if(memoization.containsKey(tuple)) {
-            return memoization.get(tuple);
+        int cost = 0;
+
+        if(tuple.anyBeginsWith("-")) {
+            cost-=4;
         }
-
         if(tuple.anyEmpty()) {
-            memoization.put(tuple, tuple.deltaLength() * -4);
-            return tuple.deltaLength() * -4;
+            return similarity(tuple.padLesserOne(1), costs, symbolMapping, memoization);
         }
 
-        int indexFirst = symbolMapping.containsKey(tuple.first.charAt(0)) ? symbolMapping.get(tuple.first.charAt(0)) : 23;
-        int indexSecond = symbolMapping.containsKey(tuple.second.charAt(0)) ? symbolMapping.get(tuple.second.charAt(0)) : 23;
 
-        int wrong = similarity(tuple.dropFirst(1).dropSecond(1), costs, symbolMapping, memoization) + costs[indexFirst][indexSecond];
-        int missing1 = similarity(tuple.dropSecond(1), costs, symbolMapping, memoization) - 4; // -4 kommer fr. std i matrisens kanter.
-        int missing2 = similarity(tuple.dropFirst(1), costs, symbolMapping, memoization) - 4;
+        int index1 = symbolMapping.containsKey(tuple.first.charAt(0)) ? symbolMapping.get(tuple.first.charAt(0)) : 23;
+        int index2 = symbolMapping.containsKey(tuple.second.charAt(0)) ? symbolMapping.get(tuple.second.charAt(0)) : 23;
+        cost += costs[index1][index2];
+        final Result thisCall = new Result(tuple.firstChars(), cost);
 
-        int result = Math.max(wrong, Math.max(missing1, missing2));
-        memoization.put(tuple, result);
+        Result wrong = thisCall.addWith( similarity(tuple.dropBoth(1), costs, symbolMapping, memoization ));
+        Result firstMissing = thisCall.addWith( similarity(tuple.dropBoth(1).dashFirst(), costs, symbolMapping, memoization));
+        Result secondMissing = thisCall.addWith( similarity(tuple.dropBoth(1).dashSecond(), costs, symbolMapping, memoization));
 
+        Result result = Arrays.stream(new Result[]{wrong, firstMissing, secondMissing})
+                            .max((r1,r2) -> Integer.compare(r1.score,r2.score))
+                            .get();
         return result;
+
+
+
     }
 
     static Optional<Specie> specieParser(String specieString) {
@@ -122,6 +133,50 @@ public class gorilla {
         }
     }
 
+    static class Result {
+        StringTuple words;
+        int score;
+
+        public Result(StringTuple words, int score) {
+            this.words = words;
+            this.score = score;
+        }
+
+        public Result addWith(Result other) {
+            return new Result(  new StringTuple( this.words.first+other.words.first,
+                                                this.words.second+other.words.second ),
+                                this.score+other.score);
+        }
+
+        public void adjustScore(int amount) {
+            score += amount;
+        }
+
+        @Override
+        public String toString() {
+            return words.first + '\n' + words.second + '\n' + score;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Result result = (Result) o;
+
+            if (score != result.score) return false;
+            return words != null ? words.equals(result.words) : result.words == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = words != null ? words.hashCode() : 0;
+            result = 31 * result + score;
+            return result;
+        }
+    }
+
     static class StringTuple {
         String first;
         String second;
@@ -131,22 +186,55 @@ public class gorilla {
             this.second = second;
         }
 
+        public StringTuple firstChars() {
+            return new StringTuple(
+                        first.isEmpty() ? "" : first.substring(0,1),
+                        second.isEmpty() ? "" : second.substring(0,1)
+                    );
+        }
+
         public boolean anyEmpty() {
             return first.isEmpty() || second.isEmpty();
+        }
+
+        public boolean anyBeginsWith(String prefix) {
+            return first.startsWith(prefix) || second.startsWith(prefix);
         }
 
         public int deltaLength() {
             return Math.abs(first.length()-second.length());
         }
 
+        public StringTuple dashFirst() {
+            return new StringTuple("-"+first, second);
+        }
+
+        public StringTuple dashSecond() {
+            return new StringTuple(first, "-"+second);
+        }
+
+        public StringTuple padLesserOne(int count) {
+            StringBuilder bob = new StringBuilder();
+            for(int i = 0; i<count; i++) bob.append("-");
+
+            if(first.length() > second.length()) {
+                return new StringTuple(first, second+bob.toString());
+            } else {
+                return new StringTuple(first+bob.toString(), second);
+            }
+        }
+
         public StringTuple dropFirst(int count) {
-            return new StringTuple(first.substring(count), second);
+            return new StringTuple(first.length() > count ? first.substring(count) : "", second);
         }
 
         public StringTuple dropSecond(int count) {
-            return new StringTuple(first, second.substring(count));
+            return new StringTuple(first, second.length() > count ? second.substring(count) : "");
         }
 
+        public StringTuple dropBoth(int count) {
+            return new StringTuple(first, second).dropFirst(count).dropSecond(count);
+        }
         @Override
         public String toString() {
             return "(" + first + ", " + second + ')';
