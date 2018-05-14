@@ -52,25 +52,18 @@ public class gorilla {
     }
 
     static Result similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, Map<StringTuple, Integer> memoization) {
-        calls++;
-        long start = System.currentTimeMillis();
-
         // if we've already calculated the tuple, just fetch it from the map.
         if(memoization.containsKey(tuple)) {
-            calls--;
             return new Result(tuple, memoization.get(tuple));
         }
-        if(calls==1) System.err.println("memo "+ (System.currentTimeMillis()-start));
-        // termination checks first
+
         Result result;
+
+        // termination checks first
         if(tuple.bothEmpty()) {
             result = new Result(tuple, 0);
-            calls--;
-            return result;
         } else if(tuple.anyEmpty()) {
             result = new Result(tuple.padLesserOne(tuple.deltaLength()), tuple.deltaLength() * -4);
-            calls--;
-            return result;
         } else {
             // getting the cost for this call.
             int index1 = symbolMapping.getOrDefault(tuple.first.charAt(0), 23); // 23 handles dashes.
@@ -78,23 +71,20 @@ public class gorilla {
 
             int cost = costs[index1][index2];
             final Result thisCall = new Result(tuple.firstChars(), cost);
-            if(calls==1) System.err.println("indice "+ (System.currentTimeMillis()-start));
 
             // recursion.
             Result wrong = thisCall.addWith(similarity(tuple.dropBoth(1), costs, symbolMapping, memoization));
             Result firstMissing = thisCall.addWith(similarity(tuple.dropBoth(1).dashFirst(), costs, symbolMapping, memoization));
             Result secondMissing = thisCall.addWith(similarity(tuple.dropBoth(1).dashSecond(), costs, symbolMapping, memoization));
-            if(calls==1) System.err.println("recusion "+ (System.currentTimeMillis()-start));
 
             // done
             result = Arrays.stream(new Result[]{wrong, firstMissing, secondMissing})
                     .max(Comparator.comparingInt(r -> r.score))
                     .get();
 
-            if(calls==1) System.err.println("result "+ (System.currentTimeMillis()-start));
         }
+
         memoization.put(result.words, result.score);
-        calls--;
         return result;
     }
 
