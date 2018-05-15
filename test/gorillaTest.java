@@ -65,8 +65,8 @@ public class gorillaTest {
         assertTrue("Begins with error with dash with",st.dashFirst().dashSecond().anyBeginsWith("-"));
         assertFalse("Begins with gives false positves", st.anyBeginsWith("-"));
         assertEquals("Delta length is not right", 3, st.deltaLength());
-        assertEquals("Drop is not working as intended", new gorilla.StringTuple("old", "hej"), st.dropFirst(3));
-        assertEquals("The first and second has switched palce", new gorilla.StringTuple("nold", "ej"), st.dropFirst(2).dropSecond(1));
+        assertEquals("Drop is not working as intended", new gorilla.StringTuple("old", "hej"), st.dropBeginningFirst(3));
+        assertEquals("The first and second has switched palce", new gorilla.StringTuple("nold", "ej"), st.dropBeginningFirst(2).dropBeginningSecond(1));
         assertEquals("Pad is fucked", "hej-", st.padLesserOne(1).second);
     }
 

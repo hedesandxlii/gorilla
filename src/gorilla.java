@@ -6,7 +6,6 @@ import java.util.stream.Stream;
 
 public class gorilla {
 
-    public static int calls = 0;
     public static void main(String[] args) {
         gorilla g = new gorilla();
         if(args.length!=2) {
@@ -46,6 +45,7 @@ public class gorilla {
 
         Result result = similarity(reversedAndTupled, costs, symbolMapping, memoization);
 
+        System.err.println(first.name+"--"+second.name);
         result.words.first = new StringBuffer(result.words.first).reverse().toString();
         result.words.second = new StringBuffer(result.words.second).reverse().toString();
         return result;
@@ -68,23 +68,26 @@ public class gorilla {
             // getting the cost for this call.
             int index1 = symbolMapping.getOrDefault(tuple.first.charAt(0), 23); // 23 handles dashes.
             int index2 = symbolMapping.getOrDefault(tuple.second.charAt(0), 23);
-
             int cost = costs[index1][index2];
+
             final Result thisCall = new Result(tuple.firstChars(), cost);
+            memoization.put(thisCall.words, thisCall.score);
 
             // recursion.
             Result wrong = thisCall.addWith(similarity(tuple.dropBoth(1), costs, symbolMapping, memoization));
+            memoization.put(wrong.words, wrong.score);
+
             Result firstMissing = thisCall.addWith(similarity(tuple.dropBoth(1).dashFirst(), costs, symbolMapping, memoization));
+            memoization.put(firstMissing.words, firstMissing.score);
+
             Result secondMissing = thisCall.addWith(similarity(tuple.dropBoth(1).dashSecond(), costs, symbolMapping, memoization));
+            memoization.put(secondMissing.words, secondMissing.score);
 
             // done
             result = Arrays.stream(new Result[]{wrong, firstMissing, secondMissing})
                     .max(Comparator.comparingInt(r -> r.score))
                     .get();
-
         }
-
-        memoization.put(result.words, result.score);
         return result;
     }
 
@@ -244,16 +247,24 @@ public class gorilla {
             }
         }
 
-        public StringTuple dropFirst(int count) {
+        public StringTuple dropBeginningFirst(int count) {
             return new StringTuple(first.length() > count ? first.substring(count) : "", second);
         }
 
-        public StringTuple dropSecond(int count) {
+        public StringTuple dropBeginningSecond(int count) {
             return new StringTuple(first, second.length() > count ? second.substring(count) : "");
         }
 
+        public StringTuple dropEndingFirst(int count) {
+            return new StringTuple(first.length() > count ? first.substring(0, first.length()-1-count) : "", second);
+        }
+
+        public StringTuple dropEndingSecond(int count) {
+            return new StringTuple(first, second.length() > count ? second.substring(0, second.length()-1-count) : "");
+        }
+
         public StringTuple dropBoth(int count) {
-            return new StringTuple(first, second).dropFirst(count).dropSecond(count);
+            return new StringTuple(first, second).dropBeginningFirst(count).dropBeginningSecond(count);
         }
         @Override
         public String toString() {
