@@ -10,33 +10,6 @@ import static org.junit.Assert.*;
 
 public class gorillaTest {
 
-    @Test
-    public void fineSpecieStringShouldBeParsed() throws Exception {
-        String specieString = "Sphinx the 1 and only\n" +
-                                "KQRK";
-        gorilla.Specie s = gorilla.specieParser(specieString).orElse(null);
-        assertEquals(s, new gorilla.Specie("Sphinx", "KQRK"));
-    }
-
-    @Test
-    public void shiftedStringShouldFailToParse() throws Exception {
-        String shiftedString = "KQRK\nBandersnatch";
-
-        Optional<gorilla.Specie> s = gorilla.specieParser(shiftedString);
-        assertNull(s.orElse(null));
-    }
-
-    @Test
-    public void testWithLargerString() throws Exception {
-        String specieString = "Human 2144721 HBHU 4HHB\n" +
-                                "MVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLG\n" +
-                                "AFSDGLAHLDNLKGTFATLSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVAN\n" +
-                                "ALAHKYH\n";
-        String proteinString = "MVHLTPEEKSAVTALWGKVNVDEVGGEALGRLLVVYPWTQRFFESFGDLSTPDAVMGNPKVKAHGKKVLGAFSDGLAHLDNLKGTFAT" +
-                                "LSELHCDKLHVDPENFRLLGNVLVCVLAHHFGKEFTPPVQAAYQKVVAGVANALAHKYH";
-        gorilla.Specie s = gorilla.specieParser(specieString).orElse(null);
-        assertEquals(new gorilla.Specie("Human", proteinString),s);
-    }
 
     @Test
     public void correctNumberOfSpeciesFromFile() throws Exception {

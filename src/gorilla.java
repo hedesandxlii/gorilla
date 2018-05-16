@@ -1,8 +1,6 @@
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class gorilla {
 
@@ -296,23 +294,27 @@ public class gorilla {
      * @param fileName
      * @return
      */
-    static void speciesFromFile(String fileName, List<Specie> fillWithSpecies, Queue<StringTuple> fillWithComparisons) {
-
+    static void readFileAndGetTheGoodStuff(String fileName, List<Specie> fillWithSpecies, Queue<StringTuple> fillWithComparisons) {
         try(Scanner sc = new Scanner(new FileReader(fileName))) {
             String current = sc.nextLine();
-            int noSpecies;
-            int noComparisons;
-            if(current.matches("\\d+\\s+\\d+")) {
-                String[] split = current.split("\\d+\\s+\\d+");
+            int noSpecies = 0;
+            int noComparisons = 0;
+            if(current.matches("\\d+\\s+\\d+")) { // the regex: a number - some spaces - another number
+                String[] split = current.split("\\s+");
                 noSpecies = Integer.parseInt(split[0]);
                 noComparisons = Integer.parseInt(split[1]);
             }
-
+            for (int i = 0; i<noSpecies; i++) {
+                fillWithSpecies.add(new Specie(sc.nextLine(), sc.nextLine())); // first sc.nextLine() != second sc.nextLine().
+            }
+            for (int i = 0; i<noComparisons; i++) {
+                String[] split = current.split("\\s+");
+                fillWithComparisons.add(new StringTuple(split[0], split[0]));
+            }
         } catch (FileNotFoundException e) {
             System.err.println("Could not find file, exiting...");
             System.exit(1);
         }
-        return null;
     }
 
     static int[][] readMatrixFromFile(String fileName, int side) throws FileNotFoundException {
