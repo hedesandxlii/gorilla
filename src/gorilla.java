@@ -14,30 +14,22 @@ public class gorilla {
         g.solve(args[0], args[1]);
     }
 
-    public List<Result> solve(String specieFile, String costMatrixFile) {
-        final List<Specie> species = speciesFromFile(specieFile);
-        //final List<Specie> species = speciesFromFile("test_files/hbb.txt");
+    public void solve(String specieFile, String costMatrixFile) {
+
         final Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
         final int[][] costs;
-        Map<StringTuple, Integer> memoization = new HashMap<>();
-        Set<Result> results = new HashSet<>();
+
+        final List<Specie> species = new ArrayList<>();
+        final Queue<StringTuple> comparisons = new LinkedList<>();
+
+        readFileAndGetTheGoodStuff(specieFile, species, comparisons);
+
 
         try {
             costs = gorilla.readMatrixFromFile(costMatrixFile, 24);
 
-            //System.out.println(similarity(species.get(0), species.get(3), costs, symbolMapping));
-
-            for(Specie s1 : species) {
-                for(Specie s2 : species) {
-                    if(s1!=s2 && !results.contains(new Result(new StringTuple(s1.protein, s2.protein), 0))) {
-                        results.add(similarity(s1, s2, costs, symbolMapping));
-                    }
-                }
-            }
+            // TODO go through queue and sprint the results of comparisons to stdout.
         } catch (FileNotFoundException e) { e.printStackTrace(); System.exit(1); }
-        List<Result> r = new ArrayList<>();
-        r.addAll(results);
-        return r;
     }
 
     static Result similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping) {
