@@ -296,22 +296,18 @@ public class gorilla {
      * @param fileName
      * @return
      */
-    static List<Specie> speciesFromFile(String fileName) {
+    static void speciesFromFile(String fileName, List<Specie> fillWithSpecies, Queue<StringTuple> fillWithComparisons) {
+
         try(Scanner sc = new Scanner(new FileReader(fileName))) {
-            StringJoiner bob = new StringJoiner("\n");
-            while(sc.hasNextLine()) {
-                bob.add(sc.nextLine());
+            String current = sc.nextLine();
+            int noSpecies;
+            int noComparisons;
+            if(current.matches("\\d+\\s+\\d+")) {
+                String[] split = current.split("\\d+\\s+\\d+");
+                noSpecies = Integer.parseInt(split[0]);
+                noComparisons = Integer.parseInt(split[1]);
             }
-            String contents = bob.toString();
 
-            // idéen är att läsa in hela filen, splitta på strängen på ">" för att få alla specie-strängar(och den första är tom).
-            String[] specieStrings = contents.split(">");
-
-            return Arrays.stream(specieStrings)
-                                .filter(s -> !s.isEmpty()) // ta bort tomma element.
-                                .map(gorilla::specieParser)
-                                .flatMap( o -> o.isPresent() ? Stream.of(o.get()) : Stream.empty()) // oklart varför det ska va såhär jobbigt med flatMap.
-                                .collect(Collectors.toList());
         } catch (FileNotFoundException e) {
             System.err.println("Could not find file, exiting...");
             System.exit(1);
