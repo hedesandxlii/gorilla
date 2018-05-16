@@ -11,13 +11,7 @@ import static org.junit.Assert.*;
 public class gorillaTest {
 
 
-    @Test
-    public void correctNumberOfSpeciesFromFile() throws Exception {
-        List<gorilla.Specie> species = gorilla.speciesFromFile("test_files/hbb.txt");
-        assertEquals("HbB failed", 13, species.size());
-        species = gorilla.speciesFromFile("test_files/toy.txt");
-        assertEquals("Toys failed", 3, species.size());
-    }
+
 
     @Test
     public void arrayReadFromFileShouldWorkPlease() throws Exception {
@@ -51,24 +45,5 @@ public class gorillaTest {
         gorilla.Result r2 = new gorilla.Result(new gorilla.StringTuple("san", "ne"), 22);
         gorilla.Result test = new gorilla.Result(new gorilla.StringTuple("Heejsan", "Arne"), 42);
         assertEquals(test.words, r1.addWith(r2).words);
-    }
-
-    @Test
-    public void wholeToyFileShouldBeCorrect() throws Exception {
-        gorilla g = new gorilla();
-        List<gorilla.Result> results = g.solve("test_files/Toy_FASTAs-in.txt", "test_files/BLOSUM62.txt");
-        gorilla.StringTuple sphSna = new gorilla.StringTuple("KQR-------K","KQRIKAAKABK");
-        gorilla.StringTuple sphBan = new gorilla.StringTuple("KQRK","K-AK");
-        gorilla.StringTuple snaBan = new gorilla.StringTuple("KQRIKAAKABK","-------KA-K");
-
-        results.sort(Comparator.comparingInt(r -> r.score));
-
-        assertEquals("snark, bandersnatch does not match.", -18, results.get(0).score);
-        assertEquals("Sphinx, Snark does not match.", -8, results.get(1).score);
-        assertEquals("Sphinx, bandersnatch does not match.", 5, results.get(2).score);
-
-        assertEquals("snark, bandersnatch does not match.", snaBan, results.get(0).words);
-        assertEquals("Sphinx, Snark does not match.", sphSna, results.get(1).words);
-        assertEquals("Sphinx, bandersnatch does not match.", sphBan, results.get(2).words);
     }
 }
