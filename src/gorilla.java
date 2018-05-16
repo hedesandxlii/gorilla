@@ -6,7 +6,7 @@ public class gorilla {
 
     public static void main(String[] args) {
         if(args.length!=2) {
-            System.err.println("Necessary files not specified, exiting...");
+            System.err.println("Necessary files not specified as arguments, exiting...");
             System.exit(1);
         }
 
@@ -309,7 +309,7 @@ public class gorilla {
                 fillWithComparisons.add(new StringTuple(split[0], split[0]));
             }
         } catch (FileNotFoundException e) {
-            System.err.println("Could not find file, exiting...");
+            System.err.println("Could not find input-file), exiting...");
             System.exit(1);
         }
     }
