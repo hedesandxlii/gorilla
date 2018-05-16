@@ -96,27 +96,9 @@ public class gorilla {
         return result;
     }
 
-    static Optional<Specie> specieParser(String specieString) {
+    static Specie specieParser(String specieString) {
         String[] lines = specieString.split("\n");
-
-        // gets the name from the first line.
-        String name = lines[0].split("\\s+")[0];
-
-        // joins the rest of the lines to get the protein string.
-        StringJoiner sj = new StringJoiner("");
-        for(int i = 1; i<lines.length; i++) {
-            sj.add(lines[i]);
-        }
-
-        // checks if the protein string contains any characters other than capitals, in which case its not a protein string.
-        String protein = sj.toString();
-        for(char c : protein.toCharArray()) {
-            if(!Character.isUpperCase(c)) {
-                return Optional.empty();
-            }
-        }
-
-        return Optional.of(new Specie(name, protein));
+        return new Specie(lines[0],lines[1]);
     }
 
     //
