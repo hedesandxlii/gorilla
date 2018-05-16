@@ -1,10 +1,5 @@
 import org.junit.Test;
 
-import java.text.ParseException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-
 import static org.junit.Assert.*;
 
 
@@ -15,7 +10,7 @@ public class gorillaTest {
 
     @Test
     public void arrayReadFromFileShouldWorkPlease() throws Exception {
-        int[][] test = gorilla.readMatrixFromFile("test_files/costs.txt", 24);
+        int[][] test = gorilla.readMatrixFromFile("test_files/BLOSUM62.txt", 24);
         assertEquals("test[0][0] failed" , 4, test[0][0]);
         assertEquals("test[6][9] failed" , -3, test[6][9]);
         assertEquals("test[23][23] failed" , 1, test[23][23]);
@@ -34,8 +29,8 @@ public class gorillaTest {
         assertTrue("Begins with error with dash with",st.dashFirst().dashSecond().anyBeginsWith("-"));
         assertFalse("Begins with gives false positves", st.anyBeginsWith("-"));
         assertEquals("Delta length is not right", 3, st.deltaLength());
-        assertEquals("Drop is not working as intended", new gorilla.StringTuple("old", "hej"), st.dropBeginningFirst(3));
-        assertEquals("The first and second has switched palce", new gorilla.StringTuple("nold", "ej"), st.dropBeginningFirst(2).dropBeginningSecond(1));
+        assertEquals("Drop is not working as intended", new gorilla.StringTuple("old", "hej"), st.dropFirst(3));
+        assertEquals("The first and second has switched palce", new gorilla.StringTuple("nold", "ej"), st.dropFirst(2).dropSecond(1));
         assertEquals("Pad is fucked", "hej-", st.padLesserOne(1).second);
     }
 
