@@ -1,6 +1,10 @@
->Sphinx 
+3 3
+Sphinx
 KQRK
->Bandersnatch 
+Bandersnatch
 KAK
->Snark 
+Snark
 KQRIKAAKABK
+Sphinx Snark
+Sphinx Bandersnatch
+Snark Bandersnatch
