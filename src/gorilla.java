@@ -301,7 +301,7 @@ public class gorilla {
                 noComparisons = Integer.parseInt(split[1]);
             }
             for (int i = 0; i<noSpecies; i++) {
-                String name = sc.nextLine()
+                String name = sc.nextLine();
                 fillWithSpecies.put(name,new Specie(name, sc.nextLine())); // first sc.nextLine() != second sc.nextLine().
             }
             for (int i = 0; i<noComparisons; i++) {
