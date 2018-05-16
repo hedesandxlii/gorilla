@@ -24,15 +24,15 @@ public class gorilla {
 
         readFileAndGetTheGoodStuff(specieFile, species, comparisons);
 
-
         try {
             costs = gorilla.readMatrixFromFile(costMatrixFile, 24);
 
-            for(StringTuple comp : comparisons) {
-                Result r = similarity(species.get(comp.first), species.get(comp.second), costs, symbolMapping);
-                System.out.println(comp.first +"--"+ comp.second +": "+ r.score);
+            while (!comparisons.isEmpty()){
+                StringTuple current = comparisons.poll();
+
+                Result r = similarity(species.get(current.first), species.get(current.second), costs, symbolMapping);
+                System.out.println(current.first +"--"+ current.second +": "+ r.score);
             }
-            // TODO go through queue and sprint the results of comparisons to stdout.
         } catch (FileNotFoundException e) { e.printStackTrace(); System.exit(1); }
     }
 
@@ -42,7 +42,9 @@ public class gorilla {
 
         for(int i = 0; i<memoization.length; i++) {
             for(int j = 0; j<memoization[0].length; j++) {
-                if(i == 0)
+                if(i == 0 && j == 0)
+                    memoization[0][0] = 0;
+                else if(i == 0)
                     memoization[0][j] = -4*j;
                 else if(j == 0)
                     memoization[i][0] = -4*i;
@@ -50,15 +52,12 @@ public class gorilla {
                     memoization[i][j] = Integer.MIN_VALUE;
             }
         }
-        memoization[0][0] = 0;
 
         Result result = similarity(reversedAndTupled, costs, symbolMapping, memoization, first.protein.length(), second.protein.length());
 
-        System.err.println(first.name+"--"+second.name);
         result.words.first = new StringBuffer(result.words.first).reverse().toString();
         result.words.second = new StringBuffer(result.words.second).reverse().toString();
 
-        System.out.println(first.name +"--"+ second.name +": "+ result.score);
         return result;
     }
 
@@ -292,21 +291,21 @@ public class gorilla {
      */
     static void readFileAndGetTheGoodStuff(String fileName, Map<String, Specie> fillWithSpecies, Queue<StringTuple> fillWithComparisons) {
         try(Scanner sc = new Scanner(new FileReader(fileName))) {
-            String current = sc.nextLine();
             int noSpecies = 0;
             int noComparisons = 0;
-            if(current.matches("\\d+\\s+\\d+")) { // the regex: a number - some spaces - another number
-                String[] split = current.split("\\s+");
-                noSpecies = Integer.parseInt(split[0]);
-                noComparisons = Integer.parseInt(split[1]);
-            }
+            // the regex: a number - some spaces - another number
+            String[] split = sc.nextLine().split("\\s+");
+            noSpecies = Integer.parseInt(split[0]);
+            noComparisons = Integer.parseInt(split[1]);
+
+            System.err.println("species: " + noSpecies +"\n"+ "comps: " + noComparisons);
             for (int i = 0; i<noSpecies; i++) {
                 String name = sc.nextLine();
-                fillWithSpecies.put(name,new Specie(name, sc.nextLine())); // first sc.nextLine() != second sc.nextLine().
+                fillWithSpecies.put(name, new Specie(name, sc.nextLine())); // first sc.nextLine() != second sc.nextLine().
             }
             for (int i = 0; i<noComparisons; i++) {
-                String[] split = current.split("\\s+");
-                fillWithComparisons.add(new StringTuple(split[0], split[0]));
+                split = sc.nextLine().split("\\s+");
+                fillWithComparisons.offer(new StringTuple(split[0], split[1]));
             }
         } catch (FileNotFoundException e) {
             System.err.println("Could not find input-file), exiting...");
