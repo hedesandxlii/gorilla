@@ -286,7 +286,7 @@ public class gorilla {
      * @param fileName
      * @return
      */
-    static void readFileAndGetTheGoodStuff(String fileName, List<Specie> fillWithSpecies, Queue<StringTuple> fillWithComparisons) {
+    static void readFileAndGetTheGoodStuff(String fileName, Map<String, Specie> fillWithSpecies, Queue<StringTuple> fillWithComparisons) {
         try(Scanner sc = new Scanner(new FileReader(fileName))) {
             String current = sc.nextLine();
             int noSpecies = 0;
@@ -297,7 +297,8 @@ public class gorilla {
                 noComparisons = Integer.parseInt(split[1]);
             }
             for (int i = 0; i<noSpecies; i++) {
-                fillWithSpecies.add(new Specie(sc.nextLine(), sc.nextLine())); // first sc.nextLine() != second sc.nextLine().
+                String name = sc.nextLine()
+                fillWithSpecies.put(name,new Specie(name, sc.nextLine())); // first sc.nextLine() != second sc.nextLine().
             }
             for (int i = 0; i<noComparisons; i++) {
                 String[] split = current.split("\\s+");
