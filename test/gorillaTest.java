@@ -2,6 +2,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.text.ParseException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -84,9 +85,18 @@ public class gorillaTest {
     public void wholeToyFileShouldBeCorrect() throws Exception {
         gorilla g = new gorilla();
         List<gorilla.Result> results = g.solve("test_files/Toy_FASTAs-in.txt", "test_files/BLOSUM62.txt");
+        gorilla.StringTuple sphSna = new gorilla.StringTuple("KQR-------K","KQRIKAAKABK");
+        gorilla.StringTuple sphBan = new gorilla.StringTuple("KQRK","K-AK");
+        gorilla.StringTuple snaBan = new gorilla.StringTuple("KQRIKAAKABK","-------KA-K");
 
-        assertEquals("Sphinx, Snark does not match. FILE DEPENDANT", -8, results.get(1).score);
-        assertEquals("Sphinx, bandersnatch does not match. FILE DEPENDANT", 5, results.get(2).score);
-        assertEquals("snark, bandersnatch does not match. FILE DEPENDANT", -18, results.get(0).score);
+        results.sort(Comparator.comparingInt(r -> r.score));
+
+        assertEquals("snark, bandersnatch does not match.", -18, results.get(0).score);
+        assertEquals("Sphinx, Snark does not match.", -8, results.get(1).score);
+        assertEquals("Sphinx, bandersnatch does not match.", 5, results.get(2).score);
+
+        assertEquals("snark, bandersnatch does not match.", snaBan, results.get(0).words);
+        assertEquals("Sphinx, Snark does not match.", sphSna, results.get(1).words);
+        assertEquals("Sphinx, bandersnatch does not match.", sphBan, results.get(2).words);
     }
 }
