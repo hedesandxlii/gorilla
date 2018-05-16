@@ -28,6 +28,10 @@ public class gorilla {
         try {
             costs = gorilla.readMatrixFromFile(costMatrixFile, 24);
 
+            for(StringTuple comp : comparisons) {
+                Result r = similarity(species.get(comp.first), species.get(comp.second), costs, symbolMapping);
+                System.out.println(comp.first +"--"+ comp.second +": "+ r.score);
+            }
             // TODO go through queue and sprint the results of comparisons to stdout.
         } catch (FileNotFoundException e) { e.printStackTrace(); System.exit(1); }
     }
