@@ -96,6 +96,11 @@ public class gorilla {
         return result;
     }
 
+    static StringTuple comparisonParser(String line) {
+        String[] split = line.split(" ");
+        return new StringTuple(split[0], split[1]);
+    }
+
     static Optional<Specie> specieParser(String specieString) {
         String[] lines = specieString.split("\n");
 
@@ -303,6 +308,7 @@ public class gorilla {
     //    FIL-RELATERAT OCH MISC
     //
     //
+
     /**
      * Returns a list of parsed species from a said file. Will return an empty list if nothing in the file was parsed.
      * @param fileName
