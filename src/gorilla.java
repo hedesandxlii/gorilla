@@ -19,7 +19,7 @@ public class gorilla {
         final Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
         final int[][] costs;
 
-        final List<Specie> species = new ArrayList<>();
+        final Map<String, Specie> species = new ArrayList<>();
         final Queue<StringTuple> comparisons = new LinkedList<>();
 
         readFileAndGetTheGoodStuff(specieFile, species, comparisons);
