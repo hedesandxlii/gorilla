@@ -8,7 +8,7 @@ public class gorilla {
 
     public static void main(String[] args) {
         gorilla g = new gorilla();
-        g.solve(args[0], args[1]).forEach(System.err::println);
+        g.solve(args[0], args[1]);
     }
 
     public List<Result> solve(String specieFile, String costMatrixFile) {
@@ -22,7 +22,7 @@ public class gorilla {
         try {
             costs = gorilla.readMatrixFromFile(costMatrixFile, 24);
 
-            System.out.println(similarity(species.get(0), species.get(3), costs, symbolMapping));
+            //System.out.println(similarity(species.get(0), species.get(3), costs, symbolMapping));
 
             for(Specie s1 : species) {
                 for(Specie s2 : species) {
@@ -53,22 +53,21 @@ public class gorilla {
         }
         memoization[0][0] = 0;
 
-        //System.out.println(first.protein+"--"+second.protein);
-
         Result result = similarity(reversedAndTupled, costs, symbolMapping, memoization, first.protein.length(), second.protein.length());
 
         result.words.first = new StringBuffer(result.words.first).reverse().toString();
         result.words.second = new StringBuffer(result.words.second).reverse().toString();
+
+        System.out.println(first.name +"--"+ second.name +": "+ result.score);
         return result;
     }
 
-    static Result similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, int[][] memoization, int x, int y) {
+    private static Result similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, int[][] memoization, int x, int y) {
         if(x==0 || y==0) {
             return new Result(tuple.padLesserOne(tuple.deltaLength()), memoization[x][y]);
         } else if(memoization[x][y] != Integer.MIN_VALUE) {
             return new Result(tuple, memoization[x][y]);
         }
-
 
         int index1 = symbolMapping.getOrDefault(tuple.first.charAt(0), 23);
         int index2 = symbolMapping.getOrDefault(tuple.second.charAt(0), 23);
@@ -222,10 +221,6 @@ public class gorilla {
             return first.isEmpty() || second.isEmpty();
         }
 
-        public boolean bothEmpty() {
-            return first.isEmpty() && second.isEmpty();
-        }
-
         public boolean anyBeginsWith(String prefix) {
             return first.startsWith(prefix) || second.startsWith(prefix);
         }
@@ -343,7 +338,6 @@ public class gorilla {
         return result;
     }
 
-    // bara debug!
     static void printArray(int[][] array) {
         for(int[] row : array) {
             for (int element : row) {
