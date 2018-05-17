@@ -11,19 +11,15 @@ public class gorilla {
             System.err.println("Necessary files not specified as arguments, exiting...");
             System.exit(1);
         }
+        // finds the BLOSUM-file in current directory
         File f = new File(".");
-        File[] matchingFiles = f.listFiles(new FilenameFilter() {
-                                               @Override
-                                               public boolean accept(File dir, String name) {
-                                                   return name.startsWith("BLOSUM62.txt");
-                                               }
-                                           });
+        File[] matchingFiles = f.listFiles((dir, name) -> name.equals("BLOSUM62.txt"));
+
         gorilla g = new gorilla();
         g.solve(args[0], matchingFiles[0].getName());
     }
 
     public void solve(String specieFile, String costMatrixFile) {
-        long start = System.currentTimeMillis();
         final Map<Character, Integer> symbolMapping = someNastyCodePleaseDontLookAtThis();
 
         final Map<String, Specie> species = new HashMap<>();
@@ -39,10 +35,8 @@ public class gorilla {
 
                 Result r = similarity(species.get(current.first), species.get(current.second), costs, symbolMapping);
                 System.out.println(current.first +"--"+ current.second +": "+ r.score);
-                //System.out.println(r);
             }
         } catch (FileNotFoundException e) { e.printStackTrace(); System.exit(1); }
-        System.err.println(System.currentTimeMillis()-start);
     }
 
     static Result similarity(Specie first, Specie second, int[][] costs, Map<Character, Integer> symbolMapping) {
@@ -51,9 +45,7 @@ public class gorilla {
 
         for(int i = 0; i<memoization.length; i++) {
             for(int j = 0; j<memoization[0].length; j++) {
-                if(i == 0 && j == 0)
-                    memoization[0][0] = 0;
-                else if(i == 0)
+                if(i == 0)
                     memoization[0][j] = -4*j;
                 else if(j == 0)
                     memoization[i][0] = -4*i;
@@ -64,19 +56,18 @@ public class gorilla {
 
         Result result = similarity(reversedAndTupled, costs, symbolMapping, memoization, first.protein.length(), second.protein.length());
 
+        // workaroud. algo will not pad. sorry
+        result.words = result.words.padLesserOne(result.words.deltaLength());
+        // workaroud. algo will not pad. sorry
+
         result.words.first  = new StringBuffer(result.words.first).reverse().toString();
         result.words.second = new StringBuffer(result.words.second).reverse().toString();
-
 
         return result;
     }
 
     private static Result similarity(StringTuple tuple, int[][] costs, Map<Character, Integer> symbolMapping, int[][] memoization, int x, int y) {
-        if(x == 0) {
-            return new Result(tuple.padLesserOne(y), memoization[x][y]);
-        } else if(y == 0) {
-            return new Result(tuple.padLesserOne(x), memoization[x][y]);
-        } else if(memoization[x][y] != Integer.MIN_VALUE) {
+        if(memoization[x][y] != Integer.MIN_VALUE) {
             return new Result(tuple, memoization[x][y]);
         }
 
@@ -90,13 +81,13 @@ public class gorilla {
 
         // recursion.
         Result wrong         = new Result(tuple.firstChars(), cost);
-        wrong = wrong.addWith(similarity(tuple.dropBoth(1), costs, symbolMapping, memoization, x-1, y-1));
+        wrong = wrong.addWith(similarity(tuple.drop(1,1), costs, symbolMapping, memoization, x-1, y-1));
 
         Result firstMissing  = new Result(new StringTuple("-", tuple.firstChars().second), -4);
-        firstMissing = firstMissing.addWith(similarity(tuple.dropSecond(1), costs, symbolMapping, memoization, x, y-1));
+        firstMissing = firstMissing.addWith(similarity(tuple.drop(0, 1), costs, symbolMapping, memoization, x, y-1));
 
         Result secondMissing = new Result(new StringTuple(tuple.firstChars().first, "-"), -4);
-        secondMissing = secondMissing.addWith(similarity(tuple.dropFirst(1), costs, symbolMapping, memoization, x-1, y));
+        secondMissing = secondMissing.addWith(similarity(tuple.drop(1, 0), costs, symbolMapping, memoization, x-1, y));
 
         // done
         Result result = Arrays.stream(new Result[]{wrong, firstMissing, secondMissing})
@@ -166,34 +157,11 @@ public class gorilla {
                                 this.score+other.score);
         }
 
-        public StringTuple cleanStrings() {
-            String first = words.first.replace("-", "");
-            String second = words.second.replace("-", "");
-            return new StringTuple(first, second);
-        }
-
         @Override
         public String toString() {
             return score +""+ '\n' + words.first +'\n'+ words.second +'\n';
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Result result = (Result) o;
-
-            //SKITER I SCORE
-            return words.equals(result.words);
-
-        }
-
-        @Override
-        public int hashCode() {
-            // SKITER I SCORE
-            return words != null ? words.hashCode() : 0;
-        }
     }
 
     static class StringTuple {
@@ -218,24 +186,8 @@ public class gorilla {
                     );
         }
 
-        public boolean anyEmpty() {
-            return first.isEmpty() || second.isEmpty();
-        }
-
-        public boolean anyBeginsWith(String prefix) {
-            return first.startsWith(prefix) || second.startsWith(prefix);
-        }
-
         public int deltaLength() {
             return Math.abs(first.length()-second.length());
-        }
-
-        public StringTuple dashFirst() {
-            return new StringTuple("-"+first, second);
-        }
-
-        public StringTuple dashSecond() {
-            return new StringTuple(first, "-"+second);
         }
 
         public StringTuple padLesserOne(int count) {
@@ -249,39 +201,22 @@ public class gorilla {
             }
         }
 
-        public StringTuple dropFirst(int count) {
+        public StringTuple drop(int left, int right) {
+            return new StringTuple(first, second).dropFirst(left).dropSecond(right);
+        }
+
+        private StringTuple dropFirst(int count) {
             return new StringTuple(first.length() > count ? first.substring(count) : "", second);
         }
 
-        public StringTuple dropSecond(int count) {
+        private StringTuple dropSecond(int count) {
             return new StringTuple(first, second.length() > count ? second.substring(count) : "");
-        }
-
-        public StringTuple dropBoth(int count) {
-            return new StringTuple(first, second).dropFirst(count).dropSecond(count);
         }
         @Override
         public String toString() {
             return "(" + first + ", " + second + ')';
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            StringTuple that = (StringTuple) o;
-
-            return ( this.first.equals(that.first) && this.second.equals(that.second) ) ||
-                    ( this.first.equals(that.second) && this.second.equals(that.first) );
-        }
-
-        @Override
-        public int hashCode() {
-            int result = first != null ? first.hashCode() : 0;
-            result += (second != null ? second.hashCode() : 0);
-            return result;
-        }
     }
 
 
@@ -298,18 +233,21 @@ public class gorilla {
      */
     static void readFileAndGetTheGoodStuff(String fileName, Map<String, Specie> fillWithSpecies, Queue<StringTuple> fillWithComparisons) {
         try(Scanner sc = new Scanner(new FileReader(fileName))) {
-            int noSpecies = 0;
-            int noComparisons = 0;
+            int noSpecies;
+            int noComparisons;
+
             // the regex: a number - some spaces - another number
             String[] split = sc.nextLine().split("\\s+");
             noSpecies = Integer.parseInt(split[0]);
             noComparisons = Integer.parseInt(split[1]);
 
             System.err.println("species: " + noSpecies +"\n"+ "comps: " + noComparisons);
+
             for (int i = 0; i<noSpecies; i++) {
                 String name = sc.nextLine();
-                fillWithSpecies.put(name, new Specie(name, sc.nextLine())); // first sc.nextLine() != second sc.nextLine().
+                fillWithSpecies.put(name, new Specie(name, sc.nextLine()));
             }
+
             for (int i = 0; i<noComparisons; i++) {
                 split = sc.nextLine().split("\\s+");
                 if (split[0].startsWith("#")) continue;
