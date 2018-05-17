@@ -6,6 +6,8 @@ import java.util.*;
 
 public class gorilla {
 
+    final static boolean PRINT_ALIGNMENTS = true;
+
     public static void main(String[] args) {
         if(args.length!=1) {
             System.err.println("Necessary files not specified as arguments, exiting...");
@@ -35,6 +37,7 @@ public class gorilla {
 
                 Result r = similarity(species.get(current.first), species.get(current.second), costs, symbolMapping);
                 System.out.println(current.first +"--"+ current.second +": "+ r.score);
+                if(PRINT_ALIGNMENTS) System.err.println(r.words);
             }
         } catch (FileNotFoundException e) { e.printStackTrace(); System.exit(1); }
     }
@@ -212,11 +215,11 @@ public class gorilla {
         private StringTuple dropSecond(int count) {
             return new StringTuple(first, second.length() > count ? second.substring(count) : "");
         }
+
         @Override
         public String toString() {
             return "(" + first + ", " + second + ')';
         }
-
     }
 
 
@@ -317,5 +320,4 @@ public class gorilla {
         result.put('X', 22);
         return result;
     }
-
 }
