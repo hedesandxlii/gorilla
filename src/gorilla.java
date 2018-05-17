@@ -1,7 +1,6 @@
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FilenameFilter;
 import java.util.*;
 
 public class gorilla {
@@ -278,16 +277,6 @@ public class gorilla {
             }
         }
         return result;
-    }
-
-    static void printArray(int[][] array) {
-        for(int[] row : array) {
-            for (int element : row) {
-                System.out.print( "\t" + (element == Integer.MIN_VALUE ? "-" : element) );
-            }
-            System.out.println();
-        }
-        System.out.println();
     }
 
     private static Map<Character, Integer> someNastyCodePleaseDontLookAtThis() {
